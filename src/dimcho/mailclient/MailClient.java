@@ -76,7 +76,8 @@ public class MailClient {
 			return text;
 		}
 		
-		// Gets the plain/text part from a multipart/alternative subtype 
+		// Gets the plain/text part from a multipart/alternative subtype
+		// The function returns null if the message contains no readable text
 		Multipart mPart;
 		if(part.isMimeType("multipart/alternative")){
 			mPart = (Multipart) part.getContent();
@@ -102,7 +103,6 @@ public class MailClient {
 			}
 		}
 		
-		//  The function returns null if the message contains no readable text
 		return null;
 		
 		/*InputStream mailIS = message.getInputStream();
