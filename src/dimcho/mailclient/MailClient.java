@@ -5,6 +5,8 @@ import java.util.Properties;
 import javax.mail.Address;
 import javax.mail.Folder;
 import javax.mail.Message;
+import javax.mail.Multipart;
+import javax.mail.Part;
 import javax.mail.Session;
 import javax.mail.Store;
 import javax.mail.internet.InternetAddress;
@@ -31,22 +33,19 @@ public class MailClient {
 			Message[] messages;
 			while(null != (messages = inboxFolder.getNextPage())){
 				listMails(messages);
+				
+				/*for(int i = 0;i<messages.length;i++){
+					System.out.println("Message text: ");
+					String text;
+					if(null == (text = readMailText(messages[i]))){
+						System.out.println("No text available in this message! Please view it in your browser.");
+					}else{
+						System.out.println(text);
+					}
+				}*/
 			}
 			
-			/*
-			System.out.println("Message sent from: " + messages[4].getFrom()[0]);
-			System.out.println("Message subject: " + messages[4].getSubject());
-			System.out.println("Message: ");
 			
-			InputStream mailIS = messages[4].getInputStream();
-			BufferedReader reader = getReader(mailIS);
-			
-			String currentLine="";
-			while((currentLine = reader.readLine()) != null){
-				System.out.println(currentLine);
-			}
-			*/
-					
 		} catch (Exception e) {
 			e.printStackTrace();
 		} 
@@ -54,8 +53,8 @@ public class MailClient {
 	
 	/*private static BufferedReader getReader(InputStream in){
 		return new BufferedReader(new InputStreamReader(in));
-	}
-	*/
+	}*/
+	
 	
 	private static void listMails(Message[] messages)throws Exception{
 		for(Message currentMessage: messages){
@@ -67,6 +66,60 @@ public class MailClient {
 			System.out.println("From: " + fromName + "\nSubject: " + currentMessage.getSubject());
 			System.out.println("---------------------------------------------------------------------");
 		}
+	}
+	
+	public static String readMailText(Part part) throws Exception {
+		
+		// returns the plain text
+		if(part.isMimeType("text/plain")){
+			String text = (String) part.getContent();
+			return text;
+		}
+		
+		// Gets the plain/text part from a multipart/alternative subtype 
+		Multipart mPart;
+		if(part.isMimeType("multipart/alternative")){
+			mPart = (Multipart) part.getContent();
+				
+			for(int i = 0;i<mPart.getCount();i++){
+				Part bodyPart = mPart.getBodyPart(i);
+				
+				if(bodyPart.isMimeType("text/plain")){
+					return readMailText(bodyPart);
+				}
+			}
+			
+		// Gets the plain/text part of the multipart/* subtype
+		}else if(part.isMimeType("multipart/*")){
+			mPart = (Multipart) part.getContent();
+			for(int i = 0;i < mPart.getCount();i++){
+				Part bodyPart = mPart.getBodyPart(i);
+				
+				String text = readMailText(bodyPart);
+				if(null != text){
+					return text;
+				}
+			}
+		}
+		
+		//  The function returns null if the message contains no readable text
+		return null;
+		
+		/*InputStream mailIS = message.getInputStream();
+		 
+		System.out.println("From: " + message.getFrom()[0].toString());
+		System.out.println("Subject: " + message.getSubject());
+		System.out.println("---------------------------------------------------------------------");
+		 
+		BufferedReader reader = getReader(mailIS);
+		 
+		String currentLine="";
+		while(null != (currentLine = reader.readLine())){
+			System.out.println(currentLine);
+		}
+		 
+		System.out.println("---------------------------------------------------------------------");
+		*/
 	}
 
 }
