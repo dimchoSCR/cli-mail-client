@@ -30,16 +30,16 @@ public class PageableFolderTest {
 	private static final String USER_EMAIL = "dimcho@localhost";
 	private static final String USER_PASSWORD = "password";
 	private static final String[] EMAIL_FROM = {"dimcho@localhost.com","noone@someone.com","someone@noone.com",
-												 "maxim@someone.com","eli@someone.com","test@test.com",
-												 "dimcho@localhost.com","noone@someone.com","someone@noone.com",
-												 "none@me.com", "some@none.com","D@dimcho.com",
-												 "maxim@someone.com","eli@someone.com","test@test.com"};
+												"maxim@someone.com","eli@someone.com","test@test.com",
+												"dimcho@localhost.com","noone@someone.com","someone@noone.com",
+												"none@me.com", "some@none.com","D@dimcho.com",
+												"maxim@someone.com","eli@someone.com","test@test.com"};
 	
 	private static final String[] EMAIL_SUBJECT = {"Test E-Mail","Hi, /n teting ...","Hello this is a test",
-												   "Testing,testing 1,2,3...","Tests, tests are the best","Today is not your lucky day",
-												   "Test E-Mail","Hi, /n teting ...","Hello this is a test",
-												   "Subject is not important","Some random subject", "Seriously who reads those",
-												   "Testing,testing 1,2,3...","Tests, tests are the best","Today is not your lucky day"};
+													"Testing,testing 1,2,3...","Tests, tests are the best","Today is not your lucky day",
+													"Test E-Mail","Hi, /n teting ...","Hello this is a test",
+													"Subject is not important","Some random subject", "Seriously who reads those",
+													"Testing,testing 1,2,3...","Tests, tests are the best","Today is not your lucky day"};
 	
 	private static final String[] EMAIL_TEXT = {"This is a test e-mail.","Second test e-mail","Third test e-mail",
 												"Everything is fine./nCall me ASAP./n{}@","Message text.Random words.Hello","No result",
@@ -47,19 +47,6 @@ public class PageableFolderTest {
 												"You just won a new iPhone 25S!\n PS: This is not a scam!","Some random text",
 												"Again are you really reading thease.",
 												"Everything is fine./nCall me ASAP./n{}@","Message text.Random words.Hello","No result"};
-	
-	private static final int PAGE_SIZE = 1;
-	private static final int MESSAGE_COUNT_ONE_MESSAGE_PER_TWO_PAGES = 2;
-	private static final int PAGE_SIZE_ONE_FULL_PAGE_ONE_NOT = 2;
-	private static final int MESSAGE_COUNT_ONE_FULL_PAGE_ONE_NOT = 3;
-	private static final int MESSAGE_COUNT_LARGE_PAGE_NOT_FULL= 6;
-	private static final int PAGE_SIZE_LARGE_PAGE_NOT_FULL = 24;
-	private static final int MESSAGE_COUNT_EVEN_NUMBER_OF_EMAILS = 4;
-	private static final int PAGE_SIZE_EVEN_NUMBER_OF_EMAILS = 7;
-	private static final int MESSAGE_COUNT_ODD_NUMBER_OF_EMAILS = 5;
-	private static final int PAGE_SIZE_ODD_NUMBER_OF_EMAILS = 6;
-	private static final int MESSAGE_COUNT_MULTIPLE_EMAILS_MULTIPLE_PAGES = 15;
-	private static final int PAGE_SIZE_MULTIPLE_EMAILS_MULTIPLE_PAGES = 3;
 	
 	private GreenMail mailServer;
 	private GreenMailUser mockUser;
@@ -94,7 +81,7 @@ public class PageableFolderTest {
 		mailServer.stop();
 	}
 	
-	private void sendMessagesToServer(int messageCount) throws Exception{
+	private void setUpMessages(int messageCount) throws Exception{
 		for (int i = 0; i < messageCount; i++) {
 			MimeMessage message = new MimeMessage(session);
 			message.setFrom(new InternetAddress(EMAIL_FROM[i]));
@@ -113,7 +100,8 @@ public class PageableFolderTest {
 		return new PageableFolder(folder,pageSize);
 	}
 	
-	private void performPageSpecificTests(Message[] currentPage, int pageNumber,int pageSize) throws Exception{
+	// Test the message data within the page
+	private void testPage(Message[] currentPage, int pageNumber,int pageSize) throws Exception{
 		int indexInPage = 0;
 		int overAllIndex = pageNumber*pageSize;
 		int messageCountWithinPage = currentPage.length + pageNumber*pageSize;
@@ -130,23 +118,24 @@ public class PageableFolderTest {
 	
 	
 	@Test
+	// Tests a page which holds a single message
+	// The page number and e-mail number are identical in this case
 	public void oneMessageOnePageTest()throws Exception{
-		// The page consists of one message
-		// The page number and e-mail number are identical in this case
-		sendMessagesToServer(1);
+		setUpMessages(1);
 		
-		Message[] messages = openInboxFolder(Folder.READ_ONLY, PAGE_SIZE).getNextPage();
+		Message[] messages = openInboxFolder(Folder.READ_ONLY, 1).getNextPage();
 		
-		performPageSpecificTests(messages,0,PAGE_SIZE);
+		// Page specific tests
+		testPage(messages,0,1);
 	}
 	
 	
 	@Test
+	// Tests two pages which hold one mail each
 	public void oneMessagePerTwoPagesTest() throws Exception{
-		// Each page consists of only one message
-		sendMessagesToServer(MESSAGE_COUNT_ONE_MESSAGE_PER_TWO_PAGES);
+		setUpMessages(2);
 		
-		PageableFolder inboxFolder = openInboxFolder(Folder.READ_ONLY, PAGE_SIZE);
+		PageableFolder inboxFolder = openInboxFolder(Folder.READ_ONLY, 1);
 		
 		Message messages[];
 		int pageNumber = 0;
@@ -154,9 +143,10 @@ public class PageableFolderTest {
 		// The page number and e-mail number are identical in this case
 		while(null != (messages = inboxFolder.getNextPage())){
 			// case specific tests
-			assertThat("The number of messages in the page do not match!",1,equalTo(PAGE_SIZE));
+			assertThat("The number of messages in the page do not match!",1,equalTo(1));
 			
-			performPageSpecificTests(messages, pageNumber,PAGE_SIZE);			
+			// Page specific tests
+			testPage(messages, pageNumber,1);			
 			pageNumber++;
 		}	
 		
@@ -164,97 +154,110 @@ public class PageableFolderTest {
 	}
 	
 	@Test
+	// Test one full page and another partially filled one 
 	public void oneFullPageOneNotTest() throws Exception{
 		
-		sendMessagesToServer(MESSAGE_COUNT_ONE_FULL_PAGE_ONE_NOT);
+		setUpMessages(3);
 		
-		PageableFolder inboxFolder = openInboxFolder(Folder.READ_ONLY, PAGE_SIZE_ONE_FULL_PAGE_ONE_NOT);
+		PageableFolder inboxFolder = openInboxFolder(Folder.READ_ONLY, 2);
 		
 		Message[] currentPage;
 		
 		// The page number and e-mail number do not match in this case
 		int pageNumber = 0;
 		while(null != (currentPage = inboxFolder.getNextPage())){
-			// case specific tests
-			assertNotNull(currentPage);
-			assertThat(currentPage.length,lessThanOrEqualTo(PAGE_SIZE_ONE_FULL_PAGE_ONE_NOT));
-			assertThat(currentPage.length,greaterThan(0));
+			// Case specific tests
+			assertNotNull("The page is empty",currentPage);
+			assertThat("The number of emails do not match",currentPage.length,lessThanOrEqualTo(2));
+			assertThat("The number of emails do not match",currentPage.length,greaterThan(0));
 			
-			performPageSpecificTests(currentPage, pageNumber, PAGE_SIZE_ONE_FULL_PAGE_ONE_NOT);
+			// Page specific tests
+			testPage(currentPage, pageNumber, 2);
 			
 			pageNumber++;
 		}
-		
+		// Case specific test
 		assertEquals("The number of pages do not match!",2, pageNumber);
 	}
 	
 	@Test
+	// Tests a partially filled page with a large page size
 	public void largePageNotFullTest() throws Exception{
-		sendMessagesToServer(MESSAGE_COUNT_LARGE_PAGE_NOT_FULL);
+		setUpMessages(6);
 		
-		PageableFolder inboxFolder = openInboxFolder(Folder.READ_ONLY,PAGE_SIZE_LARGE_PAGE_NOT_FULL);
+		PageableFolder inboxFolder = openInboxFolder(Folder.READ_ONLY,24);
 		
 		// There is only one page in this case
 		Message[] currentPage = inboxFolder.getNextPage();
 		
-		// case specific tests
+		// Case specific tests
 		assertNotNull("The page is empty!",currentPage);
-		assertEquals("The number of messages in the page does not match!",MESSAGE_COUNT_LARGE_PAGE_NOT_FULL, currentPage.length);
+		assertEquals("The number of messages in the page does not match!",6, currentPage.length);
 		
-		performPageSpecificTests(currentPage,0,PAGE_SIZE_LARGE_PAGE_NOT_FULL);
+		// Page specific tests
+		testPage(currentPage,0,24);
 		
 	}
 	
 	@Test
+	// Tests a page with even number of e-mails in it
 	public void evenNumberOfEmailsTest() throws Exception{
-		sendMessagesToServer(MESSAGE_COUNT_EVEN_NUMBER_OF_EMAILS);
+		setUpMessages(4);
 		
-		PageableFolder inboxFolder = openInboxFolder(Folder.READ_ONLY, PAGE_SIZE_EVEN_NUMBER_OF_EMAILS);
+		PageableFolder inboxFolder = openInboxFolder(Folder.READ_ONLY, 7);
 		
 		// There is only one page in this case
 		Message[] currentPage = inboxFolder.getNextPage();
 				
-		// case specific tests
+		// Case specific tests
 		assertNotNull("The page is empty!",currentPage);
-		assertEquals("The number of messages in the page does not match!",MESSAGE_COUNT_EVEN_NUMBER_OF_EMAILS, currentPage.length);
+		assertEquals("The number of messages in the page does not match!",4, currentPage.length);
 		
-		performPageSpecificTests(currentPage, 0, PAGE_SIZE_EVEN_NUMBER_OF_EMAILS);
+		// Page specific tests
+		testPage(currentPage, 0, 7);
 		
 	}
 	
 	@Test 
+	// Tests a page with odd number of e-mails in it
 	public void oddNumberOfEmailsTest() throws Exception{
-		sendMessagesToServer(MESSAGE_COUNT_ODD_NUMBER_OF_EMAILS);		
+		setUpMessages(5);		
 		
-		PageableFolder inboxFolder = openInboxFolder(Folder.READ_ONLY, PAGE_SIZE_ODD_NUMBER_OF_EMAILS);
+		PageableFolder inboxFolder = openInboxFolder(Folder.READ_ONLY, 6);
 		
 		// There is only one page in this case
 		Message[] currentPage = inboxFolder.getNextPage();
 						
-		// case specific tests
+		// Case specific tests
 		assertNotNull("The page is empty!",currentPage);
-		assertEquals("The number of messages in the page does not match!",MESSAGE_COUNT_ODD_NUMBER_OF_EMAILS, currentPage.length);
+		assertEquals("The number of messages in the page does not match!",5, currentPage.length);
 		
-		performPageSpecificTests(currentPage, 0, PAGE_SIZE_ODD_NUMBER_OF_EMAILS);
+		// Page specific tests
+		testPage(currentPage, 0, 6);
 	}
 	
 	@Test 
+	// Tests multiple pages filled with multiple e-mails
 	public void multipleEmailsMultiplePagesTest() throws Exception{
-		sendMessagesToServer(MESSAGE_COUNT_MULTIPLE_EMAILS_MULTIPLE_PAGES);
+		setUpMessages(15);
 		
-		PageableFolder inboxFolder = openInboxFolder(Folder.READ_ONLY, PAGE_SIZE_MULTIPLE_EMAILS_MULTIPLE_PAGES);
+		PageableFolder inboxFolder = openInboxFolder(Folder.READ_ONLY, 3);
 		
 		Message[] currentPage;
 		int pageNumber = 0;
 		
 		while(null != (currentPage = inboxFolder.getNextPage())){
+			// Case specific tests
 			assertNotNull("The page is empty!",currentPage);
-			assertEquals("The number of emails in the page do not match!",PAGE_SIZE_MULTIPLE_EMAILS_MULTIPLE_PAGES,currentPage.length);
+			assertEquals("The number of emails in the page do not match!",3,currentPage.length);
 			
-			performPageSpecificTests(currentPage, pageNumber, PAGE_SIZE_MULTIPLE_EMAILS_MULTIPLE_PAGES);
+			// Page specific tests
+			testPage(currentPage, pageNumber, 3);
+			
 			pageNumber++;
 		}
 		
+		// Case specific test
 		assertEquals("The number of pages do not match!",5, pageNumber);
 	}
 	
