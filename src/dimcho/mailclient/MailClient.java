@@ -16,7 +16,6 @@ public class MailClient {
 	public static void main(String[] args) {
 		
 		Properties properties = System.getProperties();
-		//properties.setProperty("mail.store.protocol", "imaps");
 		
 		try {
 			// set the properties to the session
@@ -33,16 +32,6 @@ public class MailClient {
 			Message[] messages;
 			while(null != (messages = inboxFolder.getNextPage())){
 				listMails(messages);
-				
-				/*for(int i = 0;i<messages.length;i++){
-					System.out.println("Message text: ");
-					String text;
-					if(null == (text = readMailText(messages[i]))){
-						System.out.println("No text available in this message! Please view it in your browser.");
-					}else{
-						System.out.println(text);
-					}
-				}*/
 			}
 			
 			
@@ -104,22 +93,6 @@ public class MailClient {
 		}
 		
 		return null;
-		
-		/*InputStream mailIS = message.getInputStream();
-		 
-		System.out.println("From: " + message.getFrom()[0].toString());
-		System.out.println("Subject: " + message.getSubject());
-		System.out.println("---------------------------------------------------------------------");
-		 
-		BufferedReader reader = getReader(mailIS);
-		 
-		String currentLine="";
-		while(null != (currentLine = reader.readLine())){
-			System.out.println(currentLine);
-		}
-		 
-		System.out.println("---------------------------------------------------------------------");
-		*/
 	}
 
 }
