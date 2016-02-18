@@ -39,11 +39,6 @@ public class MailClientTest {
 	
 	private static final String FROM = "none@dimcho.com";
 	private static final String MESSAGE_SUBJECT = "Test e-mail";
-	private static final String MESSAGE_CONTENT_TEXT = "This is plain text.";
-	private static final String MESSAGE_CONTENT_HTML = "<HTML><HEAD></HEAD>"
-														+ "<BODY><P>This is plain text.</P>"
-														+ "</BODY></HTML>";
-	private static final String ATTACHMENT_FILE_PATH = "snapshot1.png";
 	
 	private GreenMail mailServer;
 	private GreenMailUser mockUser;
@@ -83,11 +78,12 @@ public class MailClientTest {
 	}
 	
 	@Test
+	// Tests reading the plain text from a multipart message containing only plain text
 	public void mimeMessageWithOnlyTextTest() throws Exception{
 		MimeMessage message = new MimeMessage(session);
 		message.setFrom(FROM);
 		message.setSubject(MESSAGE_SUBJECT);
-		message.setText(MESSAGE_CONTENT_TEXT);
+		message.setText("Test e-mail");
 		message.setRecipient(Message.RecipientType.TO, new InternetAddress(USER_EMAIL));
 		
 		mockUser.deliver(message);
@@ -98,10 +94,11 @@ public class MailClientTest {
 		messageText = readMailText(inboxFolder.getNextPage()[0]).trim(); // Remove trailing white spaces after message
 
 		assertNotNull("The message is empty!",messageText);
-		assertThat("Message text does not match!",MESSAGE_CONTENT_TEXT,equalTo(messageText));
+		assertThat("Message text does not match!","Test e-mail",equalTo(messageText));
 	}
 	
 	@Test
+	// Tests reading the plain text from a multipart message containing plain text and html
 	public void mimeMessageWithTextAndHTMLTest() throws Exception{
 		MimeMessage message = new MimeMessage(session);
 		message.setFrom(FROM);
@@ -111,10 +108,10 @@ public class MailClientTest {
 		Multipart mPart = new MimeMultipart();
 		
 		BodyPart textPart = new MimeBodyPart();
-		textPart.setText(MESSAGE_CONTENT_TEXT);
+		textPart.setText("Test e-mail");
 		
 		BodyPart htmlPart = new MimeBodyPart();
-		htmlPart.setContent(MESSAGE_CONTENT_HTML, "text/html");
+		htmlPart.setContent("<b>Test e-mail</b>", "text/html");
 		
 		mPart.addBodyPart(textPart);
 		mPart.addBodyPart(htmlPart);
@@ -128,10 +125,11 @@ public class MailClientTest {
 		messageText = readMailText(inboxFolder.getNextPage()[0]).trim();
 		
 		assertNotNull("Message is empty!", messageText);
-		assertThat("Message content does not match!",MESSAGE_CONTENT_TEXT,equalTo(messageText));
+		assertThat("Message content does not match!","Test e-mail",equalTo(messageText));
 	}
 	
 	@Test
+	// Tests reading the plain text from a multipart message containing plain text, html and an attachment
 	public void mimeMessageWithTextHtmlAndAttachments() throws Exception{
 		MimeMessage message = new MimeMessage(session);
 		message.setFrom(FROM);
@@ -141,15 +139,15 @@ public class MailClientTest {
 		Multipart mPart = new MimeMultipart();
 		
 		BodyPart textPart = new MimeBodyPart();
-		textPart.setText(MESSAGE_CONTENT_TEXT);
+		textPart.setText("Test e-mail");
 		mPart.addBodyPart(textPart);
 		
 		BodyPart htmlPart = new MimeBodyPart();
-		htmlPart.setContent(MESSAGE_CONTENT_HTML, "text/html");
+		htmlPart.setContent("<b>Test e-mail</b>", "text/html");
 		mPart.addBodyPart(htmlPart);
 		
 		MimeBodyPart attachment = new MimeBodyPart();
-		attachment.attachFile(new File(ATTACHMENT_FILE_PATH), "image/png", null);
+		attachment.attachFile(new File("snapshot1.png"), "image/png", null);
 		mPart.addBodyPart(attachment);
 		
 		message.setContent(mPart);
@@ -161,7 +159,7 @@ public class MailClientTest {
 		messageText = readMailText(inboxFolder.getNextPage()[0]).trim();
 		
 		assertNotNull("Message is empty!", messageText);
-		assertThat("Message content does not match!",MESSAGE_CONTENT_TEXT,equalTo(messageText));
+		assertThat("Message content does not match!","Test e-mail",equalTo(messageText));
 	}
 	
 }
