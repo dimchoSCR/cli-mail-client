@@ -2,7 +2,6 @@ package dimcho.mailclient;
 
 import static org.junit.Assert.*;
 
-import java.io.File;
 import java.util.Properties;
 
 import javax.mail.BodyPart;
@@ -147,7 +146,7 @@ public class MailClientTest {
 		mPart.addBodyPart(htmlPart);
 		
 		MimeBodyPart attachment = new MimeBodyPart();
-		attachment.attachFile(new File("snapshot1.png"), "image/png", null);
+		attachment.attachFile("snapshot1.png", "image/png", null);
 		mPart.addBodyPart(attachment);
 		
 		message.setContent(mPart);
@@ -161,5 +160,88 @@ public class MailClientTest {
 		assertNotNull("Message is empty!", messageText);
 		assertThat("Message content does not match!","Test e-mail",equalTo(messageText));
 	}
+
+	@Test
+	// Tests reading the plain text from a multipart message containing ONLY html
+	public void mimeMessageWithOnlyHtml() throws Exception{
+		MimeMessage message = new MimeMessage(session);
+		message.setFrom(FROM);
+		message.setSubject(MESSAGE_SUBJECT);
+		message.setRecipient(Message.RecipientType.TO, new InternetAddress(USER_EMAIL));
+		
+		Multipart mPart = new MimeMultipart();
+		
+		BodyPart htmlPart = new MimeBodyPart();
+		htmlPart.setContent("<b>Test e-mail</b>", "text/html");
+		
+		mPart.addBodyPart(htmlPart);
+		message.setContent(mPart);
+		
+		mockUser.deliver(message);
+		
+		PageableFolder inboxFolder = openInboxFolder(Folder.READ_WRITE,1);
+		String messageText;
+		
+		// The method should return null because there is no plain text in the message
+		messageText = readMailText(inboxFolder.getNextPage()[0]);
+		
+		assertNull("Message is not empty but it should be!",messageText);
+	}
 	
+	@Test
+	// Tests reading the plain text from a multipart message containing ONLY an attachment
+	public void mimeMessageWithOnlyAnAttachment() throws Exception{
+		MimeMessage message = new MimeMessage(session);
+		message.setFrom(FROM);
+		message.setSubject(MESSAGE_SUBJECT);
+		message.setRecipient(Message.RecipientType.TO, new InternetAddress(USER_EMAIL));
+		
+		Multipart mPart = new MimeMultipart();
+		
+		MimeBodyPart attachment = new MimeBodyPart();
+		attachment.attachFile("snapshot1.png", "image/png", null);
+		mPart.addBodyPart(attachment);
+		
+		message.setContent(mPart);
+		mockUser.deliver(message);
+		
+		PageableFolder inboxFolder = openInboxFolder(Folder.READ_WRITE,1);
+		String messageText;
+		
+		// The method should return null because there is no plain text in the message
+		messageText = readMailText(inboxFolder.getNextPage()[0]);
+		
+		assertNull("Message is not empty but it should be!",messageText);
+	}
+	
+	@Test
+	// Tests reading the plain text from a multipart message containing BOTH html and an attachment
+	public void mimeMessageWithHtmlAndAttachment() throws Exception{
+		MimeMessage message = new MimeMessage(session);
+		message.setFrom(FROM);
+		message.setSubject(MESSAGE_SUBJECT);
+		message.setRecipient(Message.RecipientType.TO, new InternetAddress(USER_EMAIL));
+		
+		Multipart mPart = new MimeMultipart();
+		
+		BodyPart htmlPart = new MimeBodyPart();
+		htmlPart.setContent("<b>Test e-mail</b>", "text/html");
+		mPart.addBodyPart(htmlPart);
+		
+		MimeBodyPart attachment = new MimeBodyPart();
+		attachment.attachFile("snapshot1.png", "image/png", null);
+		mPart.addBodyPart(attachment);
+		
+		message.setContent(mPart);
+		
+		mockUser.deliver(message);
+		
+		PageableFolder inboxFolder = openInboxFolder(Folder.READ_WRITE,1);
+		String messageText;
+		
+		// The method should return null because there is no plain text in the message
+		messageText = readMailText(inboxFolder.getNextPage()[0]);
+		
+		assertNull("Message is not empty but it should be!",messageText);
+	}
 }
